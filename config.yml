@@ -1,0 +1,9 @@
+# config.yml
+
+jira_subdomain: 'unlockdata'
+username: 'seth'
+password: 'N0t2Gu3sS'
+default_project: ''
+default_project_name: 'WEB'
+
+
