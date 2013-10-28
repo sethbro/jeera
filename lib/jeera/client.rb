@@ -1,61 +1,39 @@
-require 'her'
 require 'faraday'
 require 'faraday_middleware'
-require 'singleton'
-require_relative 'auth'
 
 # stuff = `curl -D- -u #{user}:#{Jeera.config.password} -X #{method.to_s.upcase} -H "Content-Type: application/json" #{base_url}/#{url}`
 
-# Her::API.setup url: "https://#{Jeera.config.jira_subdomain}.jira.com/rest/api/2" do |conn|
-#   # Request
-#   conn.basic_auth(Jeera.config.default_user, Jeera.config.password)
-#   # conn.use Jeera::Auth
-#   # conn.use Faraday::Request::UrlEncoded
-#   conn.user FaradayMiddleware::EncodeJson
-
-#   # Response
-#   conn.use Her::Middleware::DefaultParseJSON
-
-#   # Adapter
-#   conn.use Faraday::Adapter::NetHttp
-# end
-
-
 class Jeera::Client
-  # include ::Singleton
-
   class << self
+
     def base_url
-      @base_url || "https://#{Jeera.config.jira_subdomain}.jira.com/rest/api/2"
+      @base_url ||= "https://#{Jeera.config.jira_subdomain}.jira.com/rest/api/2"
     end
 
-    def call(url, method, body = '')
+    def connection
       conn = Faraday.new(url: base_url) do |f|
         f.basic_auth(Jeera.config.default_user, Jeera.config.password)
         f.request :json
-        f.response :json #, content_type: /\bjson$/
-        # f.use FaradayMiddleware::ParseJson
-        #Her::Middleware::DefaultParseJSON
-        # f.use Faraday.default_adapter
+        f.response :json, content_type: /\bjson$/
+        f.adapter :net_http
       end
-
-      if method == :post
-        conn.post do |req|
-          req.url(url)
-          req.body(body)
-          debugger
-        end
-
-      elsif method == :get
-        conn.post do |req|
-          req.url(url)
-        end
-      end
-
     end
 
-    def get(url, user = nil)
-      call(url, :get)
+    def full_url(endpoint)
+      "/rest/api/2/#{endpoint}"
+    end
+
+    def get(url, params = {})
+      connection.get(full_url(url), params)
+    end
+
+    def post(url, body = '', params = {})
+    end
+
+    def put(url, body = '', params = {})
+    end
+
+    def delete(url, body = '')
     end
 
   end

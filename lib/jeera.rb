@@ -13,6 +13,6 @@ module Jeera
 end
 
 # Retrieve models
-Dir[File.dirname(__FILE__) + '/jeera/models/*.rb'].each { |file| require file }
+# Dir[File.dirname(__FILE__) + '/jeera/models/*.rb'].each { |file| require file }
 
 require_relative 'jira'

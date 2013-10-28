@@ -5,7 +5,7 @@ require_relative 'jeera/client'
 class Jira
 
   def projects
-    Jeera::Client.call('/project', :get)
+    Jeera::Client.get '/project'
   end
 
   # desc 'list', 'List issues for a project'
