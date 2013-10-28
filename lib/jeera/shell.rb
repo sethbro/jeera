@@ -1,14 +1,11 @@
 
-# module Jeera
-  class Jeera::Shell < Thor
+class Jeera::Shell < ::Thor
+  include Jeera::Commands::Issues
 
-    include Jeera::Commands::Issues
-
-  # Jeera.load_thorfiles()
   # issue
-  # - list
+  # - list | -s sort(priority, created, user, status, sprint, points), -u user, -p project
   # - show
-  # - go
+  # - go/visit
   # - comment
   # - assign
   # - take

@@ -14,15 +14,13 @@ module Jeera::Commands::Issues
       def list(project = nil, user = nil)
         user ||= Jeera.config.default_user
         response = Jeera.client.get('/search', { jql: "assignee=#{user}" })
-        issues = response.body['issues']
 
+        issues = response.body['issues'].map { |iss| issue_object(iss) }
         output_array = issues.inject([]) do |output_arr, issue|
-          output_arr << issue_object(issue)
+          output_arr << print_object(issue)
         end
 
-        debugger
-
-        print_table output_array
+        print_table(output_array)
       end
 
 
@@ -31,23 +29,27 @@ module Jeera::Commands::Issues
       no_commands do
 
         def issue_object(hash)
-          # debugger
+          obj = { id: hash['id'], key: hash['key'], url: hash['self'] }
           f = hash['fields']
 
-          { id: hash['id'],
-            key: hash['key'],
-            url: hash['self'],
+          obj.update({
             summary: f['summary'],
             type: f['issuetype']['name'],
-            status: f['resolution']['name'],
+            status: f['resolution'] ? f['resolution']['name'] : 'Open',
             reporter: f['reporter']['displayName'],
             priority: f['priority']['name'],
-            created: f['created'],
-            # labels:
-            # fix_version:
-          }
+            created: Time.new(f['created']).strftime('%b %d'),
+          })
         rescue => err
-          debugger
+          puts err
+          # debugger
+        end
+
+        def print_object(hash)
+          keep = %w(key type priority summary created status)
+          hash.select { |k,v| keep.include?(k.to_s) }.values
+        rescue => err
+            puts err
         end
 
       end

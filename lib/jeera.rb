@@ -18,6 +18,6 @@ module Jeera
 end
 
 # Get command definitions
-Dir['./lib/jeera/commands/*.rb'].each { |file| load file }
+Dir["#{File.dirname(__FILE__)}/jeera/commands/*.rb"].each { |file| require file }
 
 require_relative 'jeera/shell'
