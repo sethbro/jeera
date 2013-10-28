@@ -17,6 +17,7 @@ Gem::Specification.new do |gem|
   gem.add_dependency 'her', '~> 0.6.8'
   gem.add_dependency 'faraday_middleware', '~> 0.8.8'
   gem.add_dependency 'activesupport'
+  gem.add_dependency 'oj'
 
   gem.add_development_dependency 'debugger'
   gem.add_development_dependency 'minitest'

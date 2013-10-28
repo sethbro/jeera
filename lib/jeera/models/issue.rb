@@ -1,6 +1,15 @@
 
 class Jeera::Issue
-  include Her::Model
+  include ::Her::Model
 
-  collection_path "/search?jql=assignee=:user"
+  class << self
+
+    def list(user = nil)
+      user ||= Jeera.config.default_user
+      post "/rest/api/2/search", { "jql" => "assignee=#{user}" }
+      # get "/search?jql=assignee=#{user}"
+    end
+
+  end
+
 end
