@@ -1,3 +1,4 @@
+require 'active_support/core_ext/hash/keys'
 
 module Jeera::Commands::Util
 
@@ -97,15 +98,16 @@ module Jeera::Commands::Util
         end
 
         def sort_string(*args)
-          "order by #{args.join(' ')}"
+          "order by #{args.join(',')}"
+        end
+
+
+        def default_sort
+          "order by status asc,priority,created asc"
         end
 
         def default_filter
           ''
-        end
-
-        def default_sort
-          "order by status asc,priority,created asc"
         end
 
         def print_to_file(enum, filename = 'jeera_output.yml')

@@ -29,5 +29,6 @@ default_project: 'WEB'
 
 * Map statuses, types, etc. & store locally
 * Config dialog
-* Vim to edit comments
+* "Use" issue. Hold indiv issue reference for sequential commands.
+* Fire up editor/vim for comment editing
 * OAuth

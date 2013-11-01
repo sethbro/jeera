@@ -18,8 +18,10 @@ class Jeera::Client
       end
     end
 
-    def put(url, body = '', params = {})
-      connection.put(full_url(url), params)
+    def put(url, params = {})
+      connection.put(full_url(url)) do |request|
+        request.body = params
+      end
     end
 
     def delete(url, body = '')

@@ -4,8 +4,9 @@ class Jeera::Shell < ::Thor
   include Jeera::Commands::Meta
   include Jeera::Commands::Issues
 
+
   # issue
-  # - list | -s sort(priority, created, user, status, sprint, points), -u user, -p project
+  #X - list | -s sort(priority, created, user, status, sprint, points), -u user, -p project
   # - show
   # - go/visit
   # - comment
@@ -13,6 +14,7 @@ class Jeera::Shell < ::Thor
   # - take
   # - fix
   # - close
+  # - watch
   # - tag
   # - mine
   # - start
@@ -27,23 +29,8 @@ class Jeera::Shell < ::Thor
 
   # team
   # - current (sprint points/total)
-  # -
 
   # sprint
-  # -
-
-  # desc 'issue', 'Create a new issue'
-  # assignee
-  # def issue(desc, opts = {})
-  # end
-
-  # desc 'assign', 'Assign an issue to a user'
-  # def assign(issue_id, user_id)
-  # end
-
-  # desc 'search', 'Search issues'
-  # def search(keyword, opts = {})
-  # end
 
   # end
 end

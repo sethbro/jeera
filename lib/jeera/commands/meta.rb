@@ -26,6 +26,7 @@ module Jeera::Commands::Meta
 
       desc 'statuses', 'List available status types. Per project'
       def statuses(project_id_or_key)
+        project_id_or_key ||= current_project
         response = Jeera.client.get("project/#{project_id_or_key}/statuses")
         puts response.body.to_yaml
       end
@@ -37,9 +38,8 @@ module Jeera::Commands::Meta
 
       desc 'user', 'List or change current user'
       def user(username = nil)
-        if username
-          ENV['JEERA_CURRENT_USER'] = username
-        end
+        ENV['JEERA_CURRENT_USER'] = username if username
+
         say "Current user is #{current_user}"
       end
 
