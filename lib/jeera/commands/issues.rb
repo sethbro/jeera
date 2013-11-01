@@ -33,6 +33,46 @@ module Jeera::Commands::Issues
         standard_issues_table(user, project)
       end
 
+
+      # ===== Create/edit ===== #
+
+      desc 'issue', 'Create new issue'
+      method_option :project, aliases: '-p', desc: 'Project issue will be associated with'
+      method_option :user, aliases: '-u', desc: 'User issue is assigned to'
+      method_option :type, aliases: '-t', desc: 'Issue type - bug, story, etc.'
+      def issue(summary)
+        params = { fields: {
+          summary: summary,
+          issuetype: { name: (options[:type] || 'story') },
+          project: { key: (options[:project] || current_project) },
+        } }
+        params[:fields][:assignee] = { name: options[:user] } if options[:user]
+
+        response = Jeera.client.post('issue', params)
+        if response.body
+          success_message "Issue #{response.body['key']} created. - #{summary}"
+        else
+          error_message "Unable to create this issue"
+        end
+      end
+
+
+      desc 'assign', 'Assign bug to user'
+      def assign(issue_key, user)
+        params = { fields: {
+          assignee: { name: user }
+        } }
+
+        response = Jeera.client.post('issue', params)
+
+        if response.body
+          success_message "Issue #{response.body['key']} assigned to #{user}"
+        else
+          error_message "Assign who to what now?"
+        end
+      end
+
+
       private
 
       no_commands do

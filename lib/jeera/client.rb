@@ -1,6 +1,6 @@
-require 'singleton'
 require 'faraday'
 require 'faraday_middleware'
+require 'singleton'
 
 class Jeera::Client
   include Singleton
@@ -12,8 +12,10 @@ class Jeera::Client
       connection.get(full_url(url), params)
     end
 
-    def post(url, body = '', params = {})
-      connection.post(full_url(url), params)
+    def post(url, params = {})
+      connection.post(full_url(url)) do |request|
+        request.body = params
+      end
     end
 
     def put(url, body = '', params = {})
@@ -31,7 +33,6 @@ class Jeera::Client
       conn = Faraday.new(url: BASE_URL) do |faraday|
         faraday.basic_auth(Jeera.config.default_user, Jeera.config.password)
         faraday.request :json
-        # debugger
         faraday.response :json, content_type: /\bjson$/
         faraday.adapter :net_http
       end

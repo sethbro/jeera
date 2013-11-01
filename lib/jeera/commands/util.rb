@@ -119,6 +119,14 @@ module Jeera::Commands::Util
         end
       end
 
+      def error_message(msg)
+        say set_color(msg, :red)
+      end
+
+      def success_message(msg)
+        say set_color(msg, :green)
+      end
+
     end
   end
 
