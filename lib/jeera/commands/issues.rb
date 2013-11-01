@@ -1,55 +1,76 @@
+require 'time'
+require 'active_support/ordered_hash'
 
 module Jeera::Commands::Issues
 
   def self.included(thor)
+    self.define_tasks(thor)
+  end
+
+  def self.define_tasks(thor)
     thor.class_eval do
 
-      desc 'projects', 'List available projects'
-      def projects
-        Jeera.client.get '/project'
-      end
-
-      # == LIST ISSUES == #
       desc 'list', 'List issues for a project'
-      def list(project = nil, user = nil)
-        user ||= Jeera.config.default_user
-        response = Jeera.client.get('/search', { jql: "assignee=#{user}" })
-
-        issues = response.body['issues'].map { |iss| issue_object(iss) }
-        output_array = issues.inject([]) do |output_arr, issue|
-          output_arr << print_object(issue)
-        end
-
-        print_table(output_array)
+      def list(user = nil, project = nil)
+        standard_issues_table(user, project)
       end
 
+      desc 'stories', 'Story issues'
+      def stories(user = nil, project = nil)
+        jql :type, 'story'
+        standard_issues_table(user, project)
+      end
+
+      desc 'bugs', 'Bug issues'
+      def bugs(user = nil, project = nil)
+        jql :type, 'bugs'
+        standard_issues_table(user, project)
+      end
+
+      desc 'active', 'Issues in progress'
+      def active(user = nil, project = nil)
+        jql :active
+        standard_issues_table(user, project)
+      end
 
       private
 
       no_commands do
 
-        def issue_object(hash)
-          obj = { id: hash['id'], key: hash['key'], url: hash['self'] }
-          f = hash['fields']
+        def standard_issues_table(user = nil, project = nil)
+          user ||= current_user; project ||= current_project;
 
-          obj.update({
-            summary: f['summary'],
-            type: f['issuetype']['name'],
-            status: f['resolution'] ? f['resolution']['name'] : 'Open',
-            reporter: f['reporter']['displayName'],
-            priority: f['priority']['name'],
-            created: Time.new(f['created']).strftime('%b %d'),
-          })
-        rescue => err
-          puts err
-          # debugger
+          jql :user, user
+          jql :open
+          jql :default_sort
+
+          parse_and_print :issues, Jeera.client.get('search', jql_output)
         end
 
-        def print_object(hash)
-          keep = %w(key type priority summary created status)
-          hash.select { |k,v| keep.include?(k.to_s) }.values
+        def issues_object(hash)
+          f = hash['fields']
+          obj = {
+            key: hash['key'],
+            url: hash['self'],
+            priority: f['priority'] ? f['priority']['name'] : '-',
+            summary: f['summary'],
+            status: f['resolution'] ? f['resolution']['name'] : 'Open',
+            assignee: f['assignee']['displayName'],
+            created: Time.parse(f['created']).strftime('%b %d'),
+            type: f['issuetype']['name'],
+          }
         rescue => err
-            puts err
+          say set_color("**ERROR** - #{err}", :red)
+        end
+
+        def issues_print_object(hash)
+          keep = %w(key priority type summary status created)
+          obj = hash.select { |k,v| keep.include?(k.to_s) }
+          obj[:priority] = print_priority(obj[:priority])
+          return obj.values
+
+        rescue => err
+          puts "**ERROR** - #{err}"
         end
 
       end

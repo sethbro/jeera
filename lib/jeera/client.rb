@@ -8,27 +8,32 @@ class Jeera::Client
     BASE_URL = "https://#{Jeera.config.jira_subdomain}.jira.com"
 
     def get(url, params = {})
+      puts "Requesting #{full_url(url)}"
       connection.get(full_url(url), params)
     end
 
     def post(url, body = '', params = {})
+      connection.post(full_url(url), params)
     end
 
     def put(url, body = '', params = {})
+      connection.put(full_url(url), params)
     end
 
     def delete(url, body = '')
+      connection.delete(full_url(url), params)
     end
 
 
     private
 
     def connection
-      conn = Faraday.new(url: BASE_URL) do |f|
-        f.basic_auth(Jeera.config.default_user, Jeera.config.password)
-        f.request :json
-        f.response :json, content_type: /\bjson$/
-        f.adapter :net_http
+      conn = Faraday.new(url: BASE_URL) do |faraday|
+        faraday.basic_auth(Jeera.config.default_user, Jeera.config.password)
+        faraday.request :json
+        # debugger
+        faraday.response :json, content_type: /\bjson$/
+        faraday.adapter :net_http
       end
     end
 
