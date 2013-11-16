@@ -14,18 +14,21 @@ Gem::Specification.new do |gem|
   gem.name = "jeera"
   gem.require_paths = ["lib"]
 
-  # gem.add_dependency 'her', '~> 0.6.8'
+  gem.add_dependency 'thor'
   gem.add_dependency 'faraday', '~> 0.8.8'
   gem.add_dependency 'faraday_middleware', '~> 0.8.8'
-  gem.add_dependency 'activesupport'
+  gem.add_dependency 'activesupport', '~> 4.0.1'
+  gem.add_dependency 'terminal-table'
+  # gem.add_dependency 'command_line_reporter', '~> 3.2.1'
+  # gem.add_dependency 'rainbow'
   # gem.add_dependency 'oj'
 
   gem.add_development_dependency 'debugger'
-  gem.add_development_dependency 'minitest'
-  gem.add_development_dependency 'minitest-matchers'
-  gem.add_development_dependency 'mocha'
-  gem.add_development_dependency 'webmock'
-  gem.add_development_dependency 'turn'
+  # gem.add_development_dependency 'minitest'
+  # gem.add_development_dependency 'minitest-matchers'
+  # gem.add_development_dependency 'mocha'
+  # gem.add_development_dependency 'webmock'
+  # gem.add_development_dependency 'turn'
 
   gem.version = Jeera::VERSION
 end

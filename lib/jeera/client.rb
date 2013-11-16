@@ -8,7 +8,7 @@ class Jeera::Client
     BASE_URL = "https://#{Jeera.config.jira_subdomain}.jira.com"
 
     def get(url, params = {})
-      puts "Requesting #{full_url(url)}"
+      # puts "Requesting #{full_url(url)}"
       connection.get(full_url(url), params)
     end
 

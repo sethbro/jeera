@@ -1,5 +1,6 @@
-require 'time'
 require 'active_support/core_ext/hash'
+require 'awesome_print'
+require 'time'
 
 module Jeera::Commands::Issues
 
@@ -10,55 +11,72 @@ module Jeera::Commands::Issues
   def self.define_tasks(thor)
     thor.class_eval do
 
-      desc 'list', 'List issues for a project'
+      # ===== Issue Lists ===== #
+
+      # == LIST
+      desc :list, 'List issues for a project'
       def list(user = nil, project = nil)
-        standard_issues_table(user, project)
+        response = issues_call(user, project)
+        parse_and_print_table(:issues, response)
       end
 
-      desc 'stories', 'Story issues'
+      # == STORIES
+      desc :stories, 'Story issues'
       def stories(user = nil, project = nil)
         jql :type, 'story'
-        standard_issues_table(user, project)
+
+        response = issues_call(user, project)
+        parse_and_print_table(:issues, response)
       end
 
-      desc 'bugs', 'Bug issues'
+      # == BUGS
+      desc :bugs, 'Bug issues'
       def bugs(user = nil, project = nil)
         jql :type, 'bugs'
-        standard_issues_table(user, project)
+
+        response = issues_call(user, project)
+        parse_and_print_table(:issues, response)
       end
 
-      desc 'active', 'Issues in progress'
+      # == ACTIVE
+      desc :active, 'Issues in progress'
       def active(user = nil, project = nil)
         jql :active
-        standard_issues_table(user, project)
+
+        response = issues_call(user, project)
+        parse_and_print_table(:issues, response)
       end
 
-      desc 'show', 'Details about an issue'
+      # ===== Issue Details ===== #
+
+      # == SHOW
+      desc :show, 'Details about an issue'
       def show(issue_key)
         response = Jeera.client.get(issue_endpoint(issue_key))
-        issue = issue_object(response.body)
-        # puts issue.to_yaml
-        say ''
-        say "#{issue[:key]} | #{issue[:summary]}"
-        say "#{'=' * 96}\n"
-        say "#{issue[:type]} | #{issue[:status]} | #{issue[:reporter]}"
-        # say issue[:labels].join(' ')
-        say ''
+        iss = issue_obj(response.body.with_indifferent_access)
 
-        begin
-          print_wrapped(issue[:description].strip!)
-        rescue
-          puts issue[:description]
-        end
+        head = ["\n"]
+        head << [iss[:key], iss[:type], print_priority(iss[:priority]), print_status(iss[:status])].join(' | ')
+        head << iss[:summary]
+        head << hr
 
-        comment_section(issue[:comments])
+        comments = comment_section(iss[:comments])
+
+        full = [head.join("\n"), iss[:description], comments]
+        print_wrapped full.join("\n")
+      end
+
+      # == GO/BROWSE
+      desc :go, 'Opens issue page in browser'
+      def go(issue_key)
+      `open #{browse_issue_url(issue_key)}`
       end
 
 
-      # ===== Create/edit ===== #
+      # ===== Issue Manipulation ===== #
 
-      desc 'issue', 'Create new issue'
-
+      # == CREATE
+      desc :issue, 'Create new issue'
       method_option :project, aliases: '-p', desc: 'Project issue will be associated with'
       method_option :user, aliases: '-u', desc: 'User assigned to issue (assignee)'
       method_option :type, aliases: '-t', desc: 'Issue type - bug, story, etc.'
@@ -79,7 +97,8 @@ module Jeera::Commands::Issues
         end
       end
 
-      desc 'assign', 'Assign bug to user'
+      # == ASSIGN
+      desc :assign, 'Assign bug to user'
       def assign(issue_key, user)
         params = { fields: { assignee: { name: user } } }
         response = Jeera.client.post(issue_endpoint(issue_key), params)
@@ -91,24 +110,51 @@ module Jeera::Commands::Issues
         end
       end
 
-      desc 'fix', 'Mark issues as resolved'
+      # == FIX
+      desc :fix, 'Mark issue as resolved'
       def fix(issue_key)
         params = { fields: { status: { name: 'Fixed' } } }
         response = Jeera.client.put(issue_endpoint(issue_key), params)
 
-
         if success_response? response
-          success_message "Issue #{response.body['key']} fixed"
+          success_message "The fix is in. Issue #{response.body['key']} resolved."
         else
-          error_message "No that still broken"
+          error_message "No can do. Issue #{issue_key} is still broken."
         end
       end
 
-      desc 'close', 'Close issue'
+      # == START
+      desc :start, 'Mark issue as in progress'
+      def start(issue_key)
+        params = { fields: { status: { name: 'In Progress' } } }
+        response = Jeera.client.put(issue_endpoint(issue_key), params)
+
+        if success_response? response
+          success_message "Glad to hear you're on the case."
+        else
+          error_message "Your enthusiasm is appreciated. Just not right now."
+        end
+      end
+
+      # == STOP
+      desc :stop, 'Stop progress on an issue'
+      def stop(issue_key)
+        params = { fields: { status: { name: '' } } }
+        response = Jeera.client.put(issue_endpoint(issue_key), params)
+
+        if success_response? response
+          success_message "The fix is in. Issue #{response.body['key']} resolved."
+        else
+          puts response.body
+          error_message "No way. You can't quit now, #{Jeera.config.default_user}!"
+        end
+      end
+
+      # == CLOSE
+      desc :close, 'Close issue'
       def close(issue_key)
         params = { fields: { status: { name: 'Closed' } } }
         response = Jeera.client.post(issue_endpoint(issue_key), params)
-        # puts response.body
 
         if success_response? response
           success_message "Issue #{response.body['key']} closed"
@@ -122,115 +168,108 @@ module Jeera::Commands::Issues
 
       no_commands do
 
-        def standard_issues_table(user = nil, project = nil)
+        def issues_call(user = nil, project = nil)
           user ||= current_user; project ||= current_project;
 
           jql :user, user
           jql :open
           jql :default_sort
 
-          parse_and_print :issues, Jeera.client.get('search', jql_output)
+          Jeera.client.get('search', jql_output)
+        end
+
+        # Normalizes API response for single issue for issue table display
+        #
+        # @param hash [Hash] Issue response hash from API
+        # @return [Hash] Normalized hash
+        def issues_obj(hash)
+          f = hash[:fields]
+
+          # NOTE: Order is important here!
+          obj = {
+            key: hash['key'],
+            priority:           f[:priority] ? f[:priority][:name] : '-',
+            summary:        f[:summary],
+            type:                f[:issuetype][:name],
+            created:           Time.parse(f[:created]).strftime('%b %d'),
+            status:             f[:status] ? f[:status][:name] : 'Open',
+          }
+
+          # Additional formatting
+          obj[:priority] = print_priority(obj[:priority])
+          obj[:status] = print_status(obj[:status])
+
+          obj.values
+        rescue => err
+          error_message(err)
+        end
+
+        # Normalizes API response for single issue for issue detail display
+        #
+        # @param hash [Hash] Issue response hash from API
+        # @return [Hash] Normalized hash
+        def issue_obj(hash)
+          f = hash[:fields]
+
+          # NOTE: Order is important here!
+          obj = {
+            key: hash['key'],
+            # url: hash['self'],
+            priority:        f[:priority] ? f[:priority][:name] : '-',
+            summary:     f[:summary],
+            description:  f[:description],
+            type:             f[:issuetype][:name],
+            created:        Time.parse(f[:created]).strftime('%b %d'),
+            status:          f[:status] ? f[:status][:name] : 'Open',
+            assignee:      f[:assignee][:displayName],
+            reporter:       f[:reporter][:displayName],
+            comments:   f[:comment],
+            labels:          f[:labels],
+          }
+
+          # Additional formatting
+          obj[:priority] = print_priority(obj[:priority])
+          obj[:status] = print_status(obj[:status])
+
+          obj
+        rescue => err
+          error_message(err)
         end
 
         def comment_section(comments_hash)
-          if comments_hash[:total] > 0
-            say ''
-            say 'Comments'
-            say "#{'~' * 96}\n"
-            # puts comments_hash[:comments].to_yaml
+          return 'No comments' unless comments_hash[:total] > 0
 
-            comments_hash[:comments].each do |comment|
-              say ''
-              print_wrapped comment[:body]
-              say "#{comment[:author][:name]} | #{Time.parse(comment[:updated]).strftime('%b %d %H:%m')}  "
-              say ''
-            end
-          else
-            set_color 'No comments', :red
+          sec = ["\n"]
+          sec << "Comments"
+          sec << hr
+
+          comments_hash[:comments].each do |cmt|
+            time = Time.parse(cmt[:updated]).strftime('%b %d %H:%m')
+
+            sec << ''
+            sec << cmt[:body]
+            sec << "-- #{cmt[:author][:name]} | #{time}"
+            sec << ''
           end
+
+          sec.join("\n")
         end
 
-        # Normalizes single issue API response into a hash ready for display in issue list
-        #
-        # @param hash [Hash] Issue response hash from API
-        # @return [Hash] Normalized hash
-        def issues_object(hash)
-          h = hash.with_indifferent_access
-          f = h[:fields]
-
-          obj = {
-            key: h[:key],
-            url: h[:self],
-            created:      Time.parse(f[:created]).strftime('%b %d'),
-            summary:    f[:summary],
-            priority:       f[:priority] ? f[:priority][:name] : '-',
-            status:         f[:status] ? f[:status][:name] : 'Open',
-            assignee:     f[:assignee][:displayName],
-            severity:       f[:severity],
-            type:             f[:issuetype][:name],
-          }.with_indifferent_access
-
-        rescue => err
-          say set_color("**ERROR** - #{err}", :red)
-        end
-
-        # Turns issue API hash into array of arrays ready for table display
-        #
-        # @param hash [Hash] Normalized issue hash
-        # @return [Array] D hash
-        def issues_print_object(hash)
-          cols = %w(key priority type summary status created severity)
-          obj = hash.select { |k, v| cols.include?(k.to_s) }
-          obj[:priority] = print_priority(obj[:priority])
-
-          return obj.values
-
-        rescue => err
-          error_message "**ERROR** - #{err}"
-        end
-
-        # Normalizes single issue API response into a hash geared towards issue details display
-        #
-        # @param hash [Hash] Issue response hash from API
-        # @return [Hash] Normalized hash
-        def issue_object(hash)
-          h = hash.with_indifferent_access
-          f = h[:fields]
-
-          obj = {
-            key: h[:key],
-            url: h[:self],
-            created:          Time.parse(f[:created]).strftime('%b %d'),
-            summary:        f[:summary],
-            description:    f[:description],
-            type:                f[:issuetype][:name],
-            status:             f[:status] ? f[:status][:name] : 'Open',
-            priority:           f[:priority] ? f[:priority][:name] : '-',
-            assignee:        f[:assignee][:displayName],
-            reporter:         f[:reporter][:displayName],
-            comments:      f[:comment],
-            labels:             f[:labels],
-          }.with_indifferent_access
-
-        rescue => err
-          error_message "**ERROR** - #{err}"
-        end
-
+        # Returns url endpoint for an issue, defaulting to active project if needed
         def issue_endpoint(issue_key)
           "issue/#{issue_project_key(issue_key)}"
         end
 
+        # Returns an issue key based on active project if no project specified
         def issue_project_key(issue_key)
           issue_key.split('-').length > 1 ? issue_key : [current_project, issue_key].join('-')
         end
 
-        def success_response?(response)
-          response.body['errors'].blank?
+        def browse_issue_url(issue_key)
+          "https://#{Jeera.config.jira_subdomain}.jira.com/browse/#{issue_project_key(issue_key)}"
         end
 
       end
-
     end
   end
-
 end

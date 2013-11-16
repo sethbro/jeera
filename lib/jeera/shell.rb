@@ -1,6 +1,6 @@
 
 class Jeera::Shell < ::Thor
-  include Jeera::Commands::Util
+  include Jeera::Util
   include Jeera::Commands::Meta
   include Jeera::Commands::Issues
 
