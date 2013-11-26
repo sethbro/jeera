@@ -53,18 +53,14 @@ module Jeera::Commands::Issues
       desc :show, 'Details about an issue'
       def show(issue_key)
         response = Jeera.client.get(issue_endpoint(issue_key))
-        iss = issue_obj(response.body.with_indifferent_access)
+        issue = issue_obj(response.body.with_indifferent_access)
 
-        head = ["\n"]
-        head << [iss[:key], iss[:type], print_priority(iss[:priority]), print_status(iss[:status])].join(' | ')
-        head << iss[:summary]
-        head << hr
+        comments = issue[:comments]
+        comments = (comments && ! comments.empty?) ? comment_section(comments) : ''
 
-        comments = comment_section(iss[:comments])
-
-        full = [head.join("\n"), iss[:description], comments]
-        print_wrapped full.join("\n")
+        say ["\n", issue_header(issue), issue[:description], "\n", comments].join("\n")
       end
+
 
       # == GO/BROWSE
       desc :go, 'Opens issue page in browser'
@@ -77,9 +73,9 @@ module Jeera::Commands::Issues
 
       # == CREATE
       desc :issue, 'Create new issue'
-      method_option :project, aliases: '-p', desc: 'Project issue will be associated with'
-      method_option :user, aliases: '-u', desc: 'User assigned to issue (assignee)'
-      method_option :type, aliases: '-t', desc: 'Issue type - bug, story, etc.'
+      # method_option :project, aliases: '-p', desc: 'Project issue will be associated with'
+      # method_option :user, aliases: '-u', desc: 'User assigned to issue (assignee)'
+      # method_option :type, aliases: '-t', desc: 'Issue type - bug, story, etc.'
 
       def issue(summary)
         params = { fields: {
@@ -164,9 +160,13 @@ module Jeera::Commands::Issues
 
 
       private
-
       no_commands do
 
+        # Makes an API issue search call with standard options
+        #
+        # @param user [String] User key to filter issues by
+        # @param project [String] Project key to filter issues by
+        # @return [Hash] Normalized hash
         def issues_call(user = nil, project = nil)
           user ||= current_user; project ||= current_project;
 
@@ -213,7 +213,6 @@ module Jeera::Commands::Issues
           # NOTE: Order is important here!
           obj = {
             key: hash['key'],
-            # url: hash['self'],
             priority:        f[:priority] ? f[:priority][:name] : '-',
             summary:     f[:summary],
             description:  f[:description],
@@ -235,23 +234,31 @@ module Jeera::Commands::Issues
           error_message(err)
         end
 
+        # Issue details (key, status, summary, etc) formatted for individual issue display
+        def issue_header(issue_hash)
+          info = [issue_hash[:key], issue_hash[:type], print_priority(issue_hash[:priority]), print_status(issue_hash[:status])]
+          [info.join(' | '), issue_hash[:summary], hr].join("\n")
+        end
+
+        # Formatted output for all comments
         def comment_section(comments_hash)
-          return 'No comments' unless comments_hash[:total] > 0
+          return set_color('No comments', :cyan) unless comments_hash[:total] > 0
 
-          sec = ["\n"]
-          sec << "Comments"
-          sec << hr
-
+          sec = ['Comments', hr]
           comments_hash[:comments].each do |cmt|
-            time = Time.parse(cmt[:updated]).strftime('%b %d %H:%m')
-
-            sec << ''
-            sec << cmt[:body]
-            sec << "-- #{cmt[:author][:name]} | #{time}"
-            sec << ''
+            sec << comment(cmt)
           end
 
           sec.join("\n")
+        end
+
+        # Formatted output for an individual comment
+        def comment(comment_hash)
+            time = Time.parse(comment_hash[:updated]).strftime('%b %d %H:%m')
+            author = set_color(" -- #{comment_hash[:author][:name]}", :cyan)
+            byline = "#{author} | #{time}\n"
+
+            [comment_hash[:body], byline].join("\n")
         end
 
         # Returns url endpoint for an issue, defaulting to active project if needed
