@@ -145,7 +145,6 @@ module Jeera::Commands::Issues
         if success_response? response
           success_message "The fix is in. Issue #{response.body['key']} resolved."
         else
-          puts response.body
           error_message "No way. You can't quit now, #{Jeera.config.default_user}!"
         end
       end
@@ -188,11 +187,11 @@ module Jeera::Commands::Issues
           # NOTE: Order is important here!
           obj = {
             key: hash['key'],
-            priority:           f[:priority] ? f[:priority][:name] : '-',
-            summary:        f[:summary],
-            type:                f[:issuetype][:name],
-            created:           Time.parse(f[:created]).strftime('%b %d'),
-            status:             f[:status] ? f[:status][:name] : 'Open',
+            priority:    f[:priority] ? f[:priority][:name] : '-',
+            summary: f[:summary].scan(/.{1,120}\b[\.),!"']*|.{1,120}/).join("\n"),
+            type:         f[:issuetype][:name],
+            created:    Time.parse(f[:created]).strftime('%b %d'),
+            status:      f[:status] ? f[:status][:name] : 'Open',
           }
 
           # Additional formatting

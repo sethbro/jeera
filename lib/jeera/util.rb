@@ -1,3 +1,4 @@
+# encoding: UTF-8
 require 'terminal-table'
 require 'benchmark'
 
@@ -28,7 +29,7 @@ module Jeera::Util
         end
 
         def parse_and_print_table(list_item_type, response)
-         print_basic_table(prepare_rows(list_item_type, response))
+          print_basic_table(prepare_rows(list_item_type, response))
         end
 
         # Formats values for issue priority
@@ -76,7 +77,9 @@ module Jeera::Util
           when :active
             @jql << "status='In Progress'"
           when :open
-            @jql << 'status not in (Icebox,Backlog,Closed)'
+            @jql << 'status not in (Icebox,Closed)'
+          when :upcoming
+            @jql << 'status not in (Icebox,Closed)'
           when :default_filter
             @jql << default_filter
           when :default_sort
@@ -161,7 +164,8 @@ module Jeera::Util
           say Terminal::Table.new({ rows: output_arr, style: table_styles })
         end
 
-        def error_message(msg)
+        def error_message(msg = nil)
+          msg ||= 'Unknown error'
           say set_color(msg, :red)
         end
 

@@ -1,3 +1,4 @@
+# encoding: UTF-8
 require 'time'
 
 module Jeera::Commands::Meta
@@ -13,8 +14,8 @@ module Jeera::Commands::Meta
       desc :projects, 'List available projects'
       def projects
         response = Jeera.client.get '/project'
-        puts response.body.to_yaml
-        success_response?(response) ? print_to_file(response, 'projects.yml') : error_message('shit the bed')
+        # puts response.body.to_yaml
+        success_response?(response) ? print_to_file(response, 'projects.yml') : error_message
       end
 
       desc :project, 'List or change current project'
@@ -29,22 +30,28 @@ module Jeera::Commands::Meta
       def statuses(project_id_or_key = nil)
         project_id_or_key ||= current_project
         response = Jeera.client.get("project/#{project_id_or_key}/statuses")
-        success_response?(response) ? print_to_file(response, 'statuses.yml') : error_message('shit the bed')
+        success_response?(response) ? print_to_file(response, 'statuses.yml') : error_message
+      end
+
+      desc :fields, 'List available fields. Per project'
+      def fields
+        response = Jeera.client.get("field")
+        success_response?(response) ? print_to_file(response.body, 'fields.yml') : error_message
       end
 
       desc :resolutions, 'List available resolution types. Per project'
       def resolutions(project_id_or_key = nil)
         project_id_or_key ||= current_project
         response = Jeera.client.get("/resolution")
-        puts response.body.to_yaml
-        success_response?(response) ? print_table(response.body, 'resolutions.yml') : error_message('shit the bed')
+        # puts response.body.to_yaml
+        success_response?(response) ? print_table(response.body, 'resolutions.yml') : error_message
       end
 
       desc :users, 'List system users'
       def users
         response = Jeera.client.get 'user/assignable/multiProjectSearch'
-        puts response.body.to_yaml
-        success_response?(response) ? print_to_file(response, 'users.yml') : error_message('shit the bed')
+        # puts response.body.to_yaml
+        success_response?(response) ? print_to_file(response, 'users.yml') : error_message
       end
 
       desc :user, 'List or change current user'
