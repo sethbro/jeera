@@ -76,7 +76,8 @@ module Jeera::Commands::Issues
       # method_option :project, aliases: '-p', desc: 'Project issue will be associated with'
       # method_option :user, aliases: '-u', desc: 'User assigned to issue (assignee)'
       # method_option :type, aliases: '-t', desc: 'Issue type - bug, story, etc.'
-
+      # method_option :open, aliases: '-o', desc: 'Open issue page in browser after creation'
+      # Return key & url
       def issue(summary)
         params = { fields: {
           summary: summary,
@@ -188,7 +189,7 @@ module Jeera::Commands::Issues
           obj = {
             key: hash['key'],
             priority:    f[:priority] ? f[:priority][:name] : '-',
-            summary: f[:summary].scan(/.{1,120}\b[\.),!"']*|.{1,120}/).join("\n"),
+            summary: f[:summary].scan(/.{1,90}\b[\.),!"']*|.{1,90}/).join("\n"),
             type:         f[:issuetype][:name],
             created:    Time.parse(f[:created]).strftime('%b %d'),
             status:      f[:status] ? f[:status][:name] : 'Open',

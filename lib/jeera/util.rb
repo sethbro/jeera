@@ -135,8 +135,7 @@ module Jeera::Util
         end
 
         def success_response?(response)
-          puts response.to_yaml
-          !response.body.respond_to? :errors
+          ! response.body.respond_to?(:errors) && ! response.body['errors']
         rescue => err
           puts error_message(err)
           false
@@ -179,6 +178,8 @@ module Jeera::Util
 
         def print_to_file(enum, filename = 'jeera_output.yml')
           f = File.open(filename, 'w')
+          enum = [*enum]
+
           enum.each do |item|
             f.puts item.to_yaml
             f.puts '#-------------------------------'
