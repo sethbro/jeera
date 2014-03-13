@@ -1,8 +1,8 @@
 # require 'oj'
 # Local gem version
-require_relative '../../thor/lib/thor'
-require 'debugger'
-# require 'thor'
+#require_relative '../../thor/lib/thor'
+#require 'debugger'
+require 'thor'
 
 require_relative 'jeera/version'
 require_relative 'jeera/config'
