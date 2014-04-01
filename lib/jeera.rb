@@ -3,6 +3,7 @@
 #require_relative '../../thor/lib/thor'
 #require 'debugger'
 require 'thor'
+require 'pry-debugger'
 
 require_relative 'jeera/version'
 require_relative 'jeera/config'

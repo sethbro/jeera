@@ -29,7 +29,11 @@ module Jeera::Util
         end
 
         def parse_and_print_table(list_item_type, response)
-          print_basic_table(prepare_rows(list_item_type, response))
+          if response.try(:body) && response.body.respond_to?(:keys)
+            print_basic_table(prepare_rows(list_item_type, response))
+          else
+            print_out response.try(:body)
+          end
         end
 
         # Formats values for issue priority

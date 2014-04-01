@@ -23,7 +23,9 @@ Gem::Specification.new do |gem|
   # gem.add_dependency 'rainbow'
   # gem.add_dependency 'oj'
 
-  gem.add_development_dependency 'debugger'
+  gem.add_development_dependency 'pry-stack_explorer', '~> 0.4.9'
+  gem.add_development_dependency 'pry-debugger', '~> 0.2.2'
+  gem.add_development_dependency 'awesome_print', '~> 1.2.0'
   # gem.add_development_dependency 'minitest'
   # gem.add_development_dependency 'minitest-matchers'
   # gem.add_development_dependency 'mocha'
